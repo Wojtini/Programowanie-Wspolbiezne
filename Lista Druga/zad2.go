@@ -179,6 +179,12 @@ func main() {
 	if(garbage!=nil){
 		fmt.Println("problem occured")
 	}
+	if(d*3 > n){
+		fmt.Println("too much shortcuts")
+	}
+	if(b*3 > n){
+		fmt.Println("too much (anti)shortcuts")
+	}
 	//Nodes
 	nodesArr := make([]*node,0)
 	//Packets
