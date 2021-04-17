@@ -3,17 +3,24 @@ with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 with Ada.Command_Line;
 with Ada.Strings;
 with ada.numerics.discrete_random;
+with Ada.Containers; use Ada.Containers;
+with Ada.Containers.Vectors;
 
 procedure main is
     No_of_nodes : Integer := Integer'Value(Ada.Command_Line.Argument(1));
-    No_of_packets : Integer := Integer'Value(Ada.Command_Line.Argument(2));
-    No_of_shortcuts : Integer := Integer'Value(Ada.Command_Line.Argument(3));
+    No_of_shortcuts : Integer := Integer'Value(Ada.Command_Line.Argument(2));
+    No_of_antishortcuts : Integer := Integer'Value(Ada.Command_Line.Argument(3));
+    No_of_packets : Integer := Integer'Value(Ada.Command_Line.Argument(4));
+    Value_of_ttl : Integer := Integer'Value(Ada.Command_Line.Argument(5));
 
     a : Integer := 0; -- pom to get value in ending
     randomNumber : Integer := 0;
     randomNumber2 : Integer := 0;
+    bulik : Integer := 0;
 
     type integerArray is array (Integer range <>) of Natural;
+    package Integer_Vectors is new Ada.Containers.Vectors(Index_Type   => Natural, Element_Type => Integer);
+    use Integer_Vectors;
 
     --rng
     subtype Rand_Range is Integer range 0 .. No_of_nodes-1;
@@ -41,16 +48,63 @@ procedure main is
       end loop;
     end Printer;
 
+
+    task PacketCounter is
+      entry lastNodeId (id: Integer);
+      entry getEnd (temp: out Integer);
+      entry packetInput(pid: Integer);
+      entry exterminate;
+    end PacketCounter;
+    task body PacketCounter is
+    packetCounts : Integer;
+    lastNode : Integer;
+    doEnd : Boolean;
+    begin
+      accept lastNodeId(id: Integer) do
+        lastNode := id;
+      end lastNodeId;
+
+      packetCounts := 0;
+      doEnd := false;
+      loop
+        select
+          accept packetInput(pid: Integer) do
+            if pid > 0 then
+              packetCounts := packetCounts + 1;
+              if pid = lastNode then
+                doEnd := true;
+              end if;
+            else
+              packetCounts := packetCounts - 1;
+            end if;
+          end packetInput;
+        or
+          accept exterminate do
+            null;
+          end exterminate;
+          exit;
+        end select;
+
+        if doEnd and packetCounts=0 then
+          accept getEnd(temp : out Integer) do
+            temp := 0;
+          end getEnd;
+        end if;
+      end loop;
+      Printer.print("PC: KONIEC KURWA");
+    end PacketCounter;
+
     type Packet is record
       id : Integer;
-      visitedNodes : integerArray(0..No_of_nodes-1);
+      visitedNodesVector : Vector;
+      ttl: Integer;
     end record;
     type PacketPtr is access Packet;
 
     type NodeInfo is record
       id : Integer;
-      handledPackets : integerArray(1..No_of_packets);
-      nextNodes : integerArray(0..No_of_nodes-1);
+      nextNodes : Vector;
+      handledPacketsVector : Vector;
     end record;
     type NodeInfoPtr is access NodeInfo;
 
@@ -73,8 +127,8 @@ procedure main is
     task body Tasker is
     ni : NodeInfoPtr;
     pom : PacketPtr;
-    counter : Integer;
     rand : Integer;
+    packetReceived : Boolean;
     begin
         accept nodeInput(n: NodeInfoPtr) do
           ni := n;
@@ -83,83 +137,95 @@ procedure main is
           null;
         end loop;
         loop
+          packetReceived := false;
           --Put_Line(Integer'Image(ni.id) & " Czeka");
           select
             accept packetInput(p: PacketPtr) do
+              packetReceived := true;
               --saving in history
-              p.visitedNodes(ni.id) := 1;
-              ni.handledPackets(p.id) := 1;
-              pom := p;
+              p.visitedNodesVector.Append(ni.id);
+              ni.handledPacketsVector.Append(p.id);
+
+              pom := p; -- for sending after accept statement
               if ni.id=No_of_nodes-1 and p.id=No_of_packets then
-                  accept getEnd(temp : out Integer) do
-                    temp := 0;
-                  end getEnd;
+                  -- accept getEnd(temp : out Integer) do
+                  --   temp := 0;
+                  -- end getEnd;
                   null;
               end if;
               rand := random(gen) + 1;
               delay rand*0.2;
-              -- for I in 1 .. No_of_nodes loop
-              --   Put_Line(Integer'Image(arr1(I)));
-              --   null;
-              -- end loop;
             end packetInput;
           or
             accept exterminate do
               null;
-            --accept, do nothing and exit loop causing to ending task
+            --accept, do nothing and exit loop causing to end task
             end exterminate;
             exit;
           end select;
-          --Wysyla do nastepnego - zmienic
-          if ni.id /= No_of_nodes-1 then
-            Printer.print("Pakiet: " & Integer'Image(pom.id) & " jest w wierzcholku " & Integer'Image(ni.id));
-            rand := random(gen) + 1;
-            counter := 0;
-            loop
-              -- Put_Line(Integer'Image(counter) & " he " & Integer'Image(rand));
-              if ni.nextNodes(counter)=1 then
-                rand := rand - 1;
-                if rand=0 then
-                  a1(counter).packetInput(pom);
-                  exit;
-                end if;
-              end if;
-              counter := (counter + 1) mod No_of_nodes;
+          --Wysyla do nastepnego
+          if packetReceived then
+            pom.ttl := pom.ttl - 1;
+            if pom.ttl < 0 then
+              Printer.print("Pakiet: " & Integer'Image(pom.id) & " umarl w wierzcholku " & Integer'Image(ni.id));
+              PacketCounter.packetInput(-1);
+            elsif ni.id /= No_of_nodes-1 then
+              Printer.print("Pakiet: " & Integer'Image(pom.id) & " jest w wierzcholku " & Integer'Image(ni.id));
+              rand := random(gen) + 1;
 
-            end loop;
-          else
-            Printer.print("Pakiet " & Integer'Image(pom.id) & " zostal odebrany");
+              rand := (rand) mod Integer(ni.nextNodes.Length);--ni.nextNodes.Length
+
+              a1(ni.nextNodes(rand)).packetInput(pom);
+            else
+              Printer.print("Pakiet " & Integer'Image(pom.id) & " zostal odebrany");
+              PacketCounter.packetInput(-1);
+            end if;
           end if;
-
-          --Old method to send to n+1 node
-          -- if (ni.id + 1) mod No_of_nodes /= 0 then
-          --   a1((ni.id + 1) mod No_of_nodes).packetInput(pom);
-          -- end if;
-
         end loop;
     end Tasker;
 
+
+
 begin
+  if(No_of_nodes<2) then
+		Put_Line("too few nodes");
+    Printer.exterminate;
+    PacketCounter.exterminate;
+		return;
+	end if;
+	if(No_of_shortcuts*2 > No_of_nodes) then
+		Put_Line("too much shortcuts");
+    Printer.exterminate;
+    PacketCounter.exterminate;
+		return;
+	end if;
+	if (No_of_antishortcuts)*2 > No_of_nodes then
+		Put_Line("too much (anti)shortcuts");
+    Printer.exterminate;
+    PacketCounter.exterminate;
+		return;
+	end if;
+	if No_of_packets = 0 then
+		Put_Line("no packets");
+    Printer.exterminate;
+    PacketCounter.exterminate;
+		return;
+	end if;
+
+
   for I in 0 .. No_of_nodes-1 loop
     --Create node and set its variables
     nodesAll(I) := new NodeInfo;
     nodesAll(I).id := I;
-    for J in 1 .. No_of_packets loop
-      nodesAll(I).handledPackets(J) := 0;
-    end loop;
-    for J in 0 .. No_of_nodes-1 loop
-      nodesAll(I).nextNodes(J) := 0;
-      --if next node then connect
-      if I+1=J then
-        nodesAll(I).nextNodes(J) := 1;
-      end if;
-    end loop;
+    if I+1/=No_of_nodes then
+      nodesAll(I).nextNodes.Append(I+1);
+    end if;
 
     a1(I).nodeInput(nodesAll(I));
     null;
   end loop;
 
-  --skroty
+  --shortcuts
   reset(gen);
   for I in 0 .. No_of_shortcuts-1 loop
     randomNumber := random(gen);
@@ -171,71 +237,105 @@ begin
         randomNumber :=  randomNumber2 - randomNumber;
         randomNumber2 := randomNumber2 - randomNumber;
       end if;
-      if randomNumber2/=randomNumber and (randomNumber2-1)/=randomNumber then
-        if nodesAll(randomNumber).nextNodes(randomNumber2) = 0 then
-          nodesAll(randomNumber).nextNodes(randomNumber2) := 1;
+
+      if randomNumber2/=randomNumber and randomNumber2/=No_of_nodes then
+        -- Check if route already exists
+        bulik := 0;
+        for E of nodesAll(randomNumber).nextNodes loop
+          if E = randomNumber2 then
+            bulik := 1;
+          end if;
+        end loop;
+        if bulik = 0 then
+          nodesAll(randomNumber).nextNodes.Append(randomNumber2);
           exit;
         end if;
       end if;
     end loop;
     -- Put_Line("nowy skrot: " & Integer'Image(randomNumber) & " do " & Integer'Image(randomNumber2));
+  end loop;
 
+  --antishortucts
+
+  for I in 0 .. No_of_antishortcuts-1 loop
+    randomNumber := random(gen);
+    loop
+      randomNumber2 := random(gen);
+      --swapPos
+      if randomNumber2 > randomNumber then
+        randomNumber2 := randomNumber2 + randomNumber;
+        randomNumber :=  randomNumber2 - randomNumber;
+        randomNumber2 := randomNumber2 - randomNumber;
+      end if;
+
+      if randomNumber2/=randomNumber then
+        -- Check if route already exists
+        bulik := 0;
+        for E of nodesAll(randomNumber).nextNodes loop
+          if E = randomNumber2 then
+            bulik := 1;
+          end if;
+        end loop;
+        if bulik = 0 then
+          nodesAll(randomNumber).nextNodes.Append(randomNumber2);
+          exit;
+        end if;
+      end if;
+    end loop;
+    -- Put_Line("nowy skrot: " & Integer'Image(randomNumber) & " do " & Integer'Image(randomNumber2));
   end loop;
 
   --display routes
   for I in 0 .. No_of_nodes-1 loop
     Put("Node no. " & Integer'Image(I) & " routes ::::::: ");
-    for J in 0 .. No_of_nodes-1 loop
-      if nodesAll(I).nextNodes(J)=1 then
-        Put(Integer'Image(J) & ", ");
-      end if;
+    for E of nodesAll(I).nextNodes loop
+      Put(Integer'Image(E) & ", ");
     end loop;
     New_Line;
   end loop;
 
+  PacketCounter.lastNodeId(No_of_packets);
   --sending packets
   for I in 1 .. No_of_packets loop
       --creating and setting packets
       packetsAll(I) := new Packet;
       packetsAll(I).id := I;
-      for J in 0 .. No_of_nodes-1 loop
-        packetsAll(I).visitedNodes(J) := 0;
-      end loop;
+      packetsAll(I).ttl := Value_of_ttl;
 
       --Printer.print( " wysylam " & Integer'Image(I));
+      PacketCounter.packetInput(I);
       a1(0).packetInput(packetsAll(I));
   end loop;
 
   Printer.print( "Czekam na info od ostatniego noda");
-  a1(No_of_nodes-1).getEnd(a);
+  PacketCounter.getEnd(a);
   Printer.print( "Wylaczam symulacje");
 
+  --armagedon
   for I in 0 .. No_of_nodes-1 loop
     a1(I).exterminate;
     null;
   end loop;
   Printer.exterminate;
+  -- PacketCounter.exterminate;
   --Statystyki
-  --Nodes Stat
+
   Put_Line("Informacje wezlow");
   for I in 0 .. No_of_nodes-1 loop
     Put("Node no. " & Integer'Image(I) & "::::::: ");
-    for J in 1 .. No_of_packets loop
-      if nodesAll(I).handledPackets(J)=1 then
-        Put(Integer'Image(J) & ", ");
-      end if;
+    for E of nodesAll(I).handledPacketsVector loop
+      Put(Integer'Image(E) & ", ");
       -- Put(Integer'Image(nodesAll(I).handledPackets(J)) & ", ");
     end loop;
     New_Line;
   end loop;
+
   --Packet Stat
   Put_Line("Informacje pakietow");
   for I in 1 .. No_of_packets loop
     Put("Packet no. " & Integer'Image(I) & "::::::: ");
-    for J in 0 .. No_of_nodes-1 loop
-      if packetsAll(I).visitedNodes(J)=1 then
-        Put(Integer'Image(J) & ", ");
-      end if;
+    for E of packetsAll(I).visitedNodesVector loop
+      Put(Integer'Image(E) & ", ");
       -- Put(Integer'Image(nodesAll(I).handledPackets(J)) & ", ");
     end loop;
     New_Line;
