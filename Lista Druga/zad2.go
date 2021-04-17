@@ -19,11 +19,13 @@ func printServer(output chan string){
 type packet struct{
   id int
   visitedNodes[] int
+	ttl int
 }
 
-func newPacket(id int) *packet {
+func newPacket(id int,ttl int) *packet {
   packet := packet{id: id}
   packet.visitedNodes = make([]int, 0)
+	packet.ttl = ttl
   return &packet
 }
 
@@ -69,7 +71,7 @@ func packetCounter(c chan int,printServer chan string,wg *sync.WaitGroup, lastPa
     defer wg.Done()
   }
 	for(!noMorePackets || nodesInSystem!=0){
-		fmt.Println("Packet counter: " , !noMorePackets , " " + strconv.Itoa(nodesInSystem))
+		// fmt.Println("Packet counter: " , !noMorePackets , " " + strconv.Itoa(nodesInSystem))
 		select {
 		case increment := <- c:
 			if(increment >= 0){ //numer wyslanego pakietu (-1 jesli usuniety ktoryz zostal)
@@ -110,7 +112,7 @@ func nodeThread(node *node,printServer chan string, k int, n int, pC chan int){
 			addVisitedToPacket(packet,node.id)
 			addVisitedToNode(node,packet.id)
 			if(trap){
-				test = "Pakiet " + strconv.Itoa(packet.id) + " wpadl w polapke w wierzcholku " + strconv.Itoa(node.id)
+				test = "Pakiet " + strconv.Itoa(packet.id)  + " wpadl w polapke w wierzcholku " + strconv.Itoa(node.id)
 				trap = false //deactivate trap
 				pC <- -1 //decrease number of nodes in system
 				printServer <- test
@@ -120,23 +122,38 @@ func nodeThread(node *node,printServer chan string, k int, n int, pC chan int){
 				}else{
 					test = "Pakiet " + strconv.Itoa(packet.id) + " zostal odebrany"
 				}
+				test = test + " /ttl:" + strconv.Itoa(packet.ttl)
 				printServer <- test
 		    // addVisitedToPacket(packet,node.id)
 				// addVisitedToNode(node,packet.id)
+				packet.ttl = packet.ttl - 1
+				if(packet.ttl < 0){
+					test = "Pakiet " + strconv.Itoa(packet.id) + " umarl ze starosci w " + strconv.Itoa(node.id)
+					pC <- -1 //decrease number of nodes in system
+					printServer <- test
+				}else{
+			    if(node.id == n-1){
+						pC <- -1
+						if(packet.id==k){
+			      	return
+						}
+			    }
+					//Wait
+			    time.Sleep(time.Duration(rand.Int31n(2)) * time.Second)
+					//Send further
+			    if(len(node.outcoming) > 0){
+			      whereToSend := rand.Intn(len(node.outcoming))
+						//if unable to send, delete packet to stop deadlock
+						select {
+						case node.outcoming[whereToSend] <- packet:
+							//comment line for good looks
+						case <-time.After(10 * time.Second):
+							pC <- -1 //decrease number of nodes in system
+				      printServer <- "Wierzcholek " + strconv.Itoa(node.id) + " nie moze przeslac dalej (TIMEOUT), porzucanie pakietu"
+						}
 
-		    if(node.id == n-1){
-					pC <- -1
-					if(packet.id==k){
-		      	return
-					}
-		    }
-				//Wait
-		    time.Sleep(time.Duration(rand.Int31n(2)) * time.Second)
-				//Send further
-		    if(len(node.outcoming) > 0){
-		      whereToSend := rand.Intn(len(node.outcoming))
-		      node.outcoming[whereToSend] <- packet
-		    }
+			    }
+				}
 			}
 		case <- node.killerChan:
 			trap = true
@@ -154,9 +171,11 @@ var endAll bool = false
 
 func main() {
 	//Var of everything
-	n,garbage := strconv.Atoi(os.Args[1])
-	k,garbage := strconv.Atoi(os.Args[2])
-	d,garbage := strconv.Atoi(os.Args[3])
+	n,garbage := strconv.Atoi(os.Args[1]) // liczba wierzcholkow
+	d,garbage := strconv.Atoi(os.Args[2]) // liczba skrotow
+	b,garbage := strconv.Atoi(os.Args[3]) // liczba 'antyskrotow'
+	k,garbage := strconv.Atoi(os.Args[4]) // liczba pakietow
+	h,garbage := strconv.Atoi(os.Args[5]) // wartosc ttl pakietow
 	if(garbage!=nil){
 		fmt.Println("problem occured")
 	}
@@ -185,7 +204,6 @@ func main() {
 		addOutToNode(nodesArr[i],nodesArr[i+1])
 	}
 	//Creating shortcuts
-
 	for i:=0;i<d;i++{
 		//Losowanie dwoch liczb
 		pom := n-2
@@ -215,6 +233,36 @@ func main() {
 		}
 		fmt.Println("Stworzono skrot: od ",a," do ",b)
 	}
+	//Creating (anti)shortcuts
+	for i:=0;i<b;i++{
+		//Losowanie dwoch liczb
+		pom := n-2
+		a := rand.Intn(pom)+1
+		b := rand.Intn(pom)+1
+
+		boolVal := false
+		for(!boolVal){
+			// fmt.Println("___________________________________")
+			a = rand.Intn(pom)+1
+			// fmt.Println(a==b, a==b-1, b==a-1)
+			for(a==b){
+				b = rand.Intn(pom)+1
+				// fmt.Println("los",a,b)
+				// fmt.Println("Po losie: ",a!=b, a!=b-1, b!=a-1)
+			}
+			// fmt.Println("potencjal ",a,b)
+			if (a < b){
+				// fmt.Println("zamiana")
+				b = b + a;
+				a = b - a;
+				b = b - a;
+				// fmt.Println("po zamianie ",a,b)
+				// fmt.Println("czyli ",nodesArr[a].id,nodesArr[b].id)
+			}
+			boolVal = addOutToNode(nodesArr[a],nodesArr[b])
+		}
+		fmt.Println("Stworzono (anty)skrot: od ",a," do ",b)
+	}
 	//Packet counter init
 	pcChan := make(chan int)
 	go packetCounter(pcChan,pom,&wg,k)
@@ -230,7 +278,7 @@ func main() {
 	}
 	//Packet sending
   for i:=1; i <= k; i++{
-		pom := newPacket(i)
+		pom := newPacket(i,h)
 		packetsArr = append(packetsArr,pom)
 		pcChan <- i
     nodesArr[0].incoming <- pom
