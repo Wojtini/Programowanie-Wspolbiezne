@@ -191,10 +191,16 @@ procedure main is
                   rand := (rand) mod Integer(ni.nextNodes.Length);--ni.nextNodes.Length
 
                   delay (random(gen) + 1)*0.2; --czekaj losowy czas
-                  a1(ni.nextNodes(rand)).packetInput(pom);
+                  select
+                    a1(ni.nextNodes(rand)).packetInput(pom);
+                  or
+                    delay 15.0;
+                    Printer.print("Pakiet: " & Integer'Image(pom.id) & " timed out w wierzcholku " & Integer'Image(ni.id));
+                    PacketCounter.packetInput(-1);
+                  end select;
                 end if;
               end if;
-            end if;
+            end if; -- :)
           end if;
         end loop;
     end Tasker;
@@ -304,7 +310,7 @@ begin
   --antishortucts
 
   for I in 0 .. No_of_antishortcuts-1 loop
-    randomNumber := random(gen);
+    randomNumber := random(gen) mod (No_of_nodes-1);
     loop
       randomNumber2 := random(gen) mod (No_of_nodes-1);
       --swapPos

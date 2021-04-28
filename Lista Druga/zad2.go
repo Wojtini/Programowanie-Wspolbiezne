@@ -126,19 +126,19 @@ func nodeThread(node *node,printServer chan string, k int, n int, pC chan int){
 				printServer <- test
 		    // addVisitedToPacket(packet,node.id)
 				// addVisitedToNode(node,packet.id)
+		    if(node.id == n-1){
+					pC <- -1
+					if(packet.id==k){
+		      	return
+					}
+		    }
 				packet.ttl = packet.ttl - 1
 				if(packet.ttl < 0){
 					test = "Pakiet " + strconv.Itoa(packet.id) + " umarl ze starosci w " + strconv.Itoa(node.id)
 					pC <- -1 //decrease number of nodes in system
 					printServer <- test
 				}else{
-			    if(node.id == n-1){
-						pC <- -1
-						if(packet.id==k){
-			      	return
-						}
-			    }
-					//Wait
+				//Wait
 			    time.Sleep(time.Duration(rand.Int31n(2)) * time.Second)
 					//Send further
 			    if(len(node.outcoming) > 0){
@@ -151,7 +151,6 @@ func nodeThread(node *node,printServer chan string, k int, n int, pC chan int){
 							pC <- -1 //decrease number of nodes in system
 				      printServer <- "Wierzcholek " + strconv.Itoa(node.id) + " nie moze przeslac dalej (TIMEOUT), porzucanie pakietu"
 						}
-
 			    }
 				}
 			}
@@ -176,14 +175,21 @@ func main() {
 	b,garbage := strconv.Atoi(os.Args[3]) // liczba 'antyskrotow'
 	k,garbage := strconv.Atoi(os.Args[4]) // liczba pakietow
 	h,garbage := strconv.Atoi(os.Args[5]) // wartosc ttl pakietow
+	if(n<2) {
+		fmt.Println("too few nodes")
+		return
+	}
 	if(garbage!=nil){
 		fmt.Println("problem occured")
+		return
 	}
 	if(d*3 > n){
 		fmt.Println("too much shortcuts")
+		return
 	}
 	if(b*3 > n){
 		fmt.Println("too much (anti)shortcuts")
+		return
 	}
 	//Nodes
 	nodesArr := make([]*node,0)
