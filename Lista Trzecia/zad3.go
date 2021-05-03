@@ -296,25 +296,25 @@ func main() {
 		connectNodes(nodesArr[i],nodesArr[i+1])
 	}
 
-  //Creating shortcuts
-	// for i:=0;i<d;i++{
-	// 	//Losowanie dwoch liczb
-	// 	pom := n
-	// 	a := rand.Intn(pom)
-	// 	b := rand.Intn(pom)
-  //
-	// 	boolVal := false
-	// 	for(!boolVal){
-	// 		a = rand.Intn(pom)
-	// 		for(a==b){
-	// 			b = rand.Intn(pom)
-	// 			//fmt.Println("los",a,b)
-	// 		}
-	// 		boolVal = connectNodes(nodesArr[a],nodesArr[b])
-	// 	}
-	// 	fmt.Println("Stworzono skrot: od ",a," do ",b)
-	// }
-  connectNodes(nodesArr[0],nodesArr[4])
+  // Creating shortcuts
+	for i:=0;i<d;i++{
+		//Losowanie dwoch liczb
+		pom := n
+		a := rand.Intn(pom)
+		b := rand.Intn(pom)
+
+		boolVal := false
+		for(!boolVal){
+			a = rand.Intn(pom)
+			for(a==b){
+				b = rand.Intn(pom)
+				//fmt.Println("los",a,b)
+			}
+			boolVal = connectNodes(nodesArr[a],nodesArr[b])
+		}
+		fmt.Println("Stworzono skrot: od ",a," do ",b)
+	}
+  // connectNodes(nodesArr[0],nodesArr[4])
   //create tables
   pom2 := make(chan int) //licznik true w R_table
   go endListener(pom2,&wg)
