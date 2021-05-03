@@ -13,6 +13,7 @@ procedure main is
     randomNumber : Integer := 0;
     randomNumber2 : Integer := 0;
     bulik : Integer := 0;
+    a : Integer := 0;
 
     type integerArray is array (Integer range <>) of Natural;
     package Integer_Vectors is new Ada.Containers.Vectors(Index_Type   => Natural, Element_Type => Integer);
@@ -53,6 +54,34 @@ procedure main is
       end loop;
     end Printer;
 
+    --Counter
+    task counter is
+      entry input (val: Integer);
+      entry getEnd (temp: out Integer);
+      entry exterminate;
+    end counter;
+    task body counter is
+    c : Integer := 0;
+    begin
+      loop
+        select
+          accept input (val: Integer) do
+            c := c + val;
+            -- Printer.print("PC:" & Integer'Image(c));
+          end input;
+        or
+          delay 10.0;
+          accept getEnd(temp : out Integer) do
+            temp := 0;
+          end getEnd;
+          accept exterminate do
+            null;
+          end exterminate;
+          exit;
+        end select;
+      end loop;
+    end counter;
+
     -- R_j
     type R_j is record
       j : Integer;
@@ -86,17 +115,20 @@ procedure main is
 
        function Get(index: Integer) return R_j is -- Get Record
        begin
+         -- arr(index).changed := false; jakos to trzeba zrobic
          return arr(index);
        end Get;
 
        procedure ChangeFlag(index: Integer; change: Boolean) is --wyglada na groznie i tak jest
        begin
+         counter.input(-1); -- change zawsze na false
          arr(index).changed := change;
        end ChangeFlag;
 
        procedure Set(value: R_j) is
        begin
          arr(value.j) := value;
+         counter.input(1);
          arr(value.j).changed := true;
        end Set;
 
@@ -114,6 +146,8 @@ procedure main is
            if n.id = I then
              arr(I).changed := false;
            else
+
+             counter.input(1);
              arr(I).changed := true;
            end if;
          end loop;
@@ -184,11 +218,6 @@ procedure main is
             end if;
             curr := routesArray(ni.id).Get(I);          --    nie ma prawa sie udac
             if curr.changed then
-              -- delay (random(gen))*1.2;
-              if ni.id = 4 then
-                null;
-                -- Printer.print(Integer'Image(ni.id) & " SENDER OPERUJE NA ROUTES ARRAY 2 ");
-              end if;
               routesArray(ni.id).ChangeFlag(I,false);   --    nie ma prawa sie udac
               new_Packet.arr(new_Packet.size) := curr;
               new_Packet.size := new_Packet.size + 1;
@@ -197,7 +226,7 @@ procedure main is
           --wyslij
           if new_Packet.size > 0 then
             counter := counter + 1;
-            -- Put_Line(Integer'Image(ni.id) & " wysylam KTORY RAZ? " & Integer'Image(counter));
+            Put_Line(Integer'Image(ni.id) & " wysyla paczke ");
             for E of ni.nextNodes loop
               rArray(E).packetInput(new_Packet);
               -- Put_Line(Integer'Image(ni.id) & "wyslalem");
@@ -236,7 +265,7 @@ procedure main is
             temp_packet := p;
           end packetInput;
           -- if ni.id = 4 then
-          --   Printer.print(Integer'Image(ni.id) & " got the package ");
+          Printer.print(Integer'Image(ni.id) & " dostal paczke " & Integer'Image(temp_packet.sender));
           -- end if;
           for I in 0 .. temp_packet.size-1 loop
             null;
@@ -310,31 +339,31 @@ begin
 
 
   --shortcuts
-  -- reset(gen);
-  -- for I in 0 .. No_of_shortcuts-1 loop
-  --   randomNumber := random(gen);
-  --   loop
-  --     randomNumber2 := random(gen);
-  --     --swapPos
-  --     if randomNumber2/=randomNumber and randomNumber2/=No_of_nodes then
-  --       -- Check if route already exists
-  --       bulik := 0;
-  --       for E of nodesAll(randomNumber).nextNodes loop
-  --         if E = randomNumber2 then
-  --           bulik := 1;
-  --         end if;
-  --       end loop;
-  --       if bulik = 0 then
-  --         nodesAll(randomNumber).nextNodes.Append(randomNumber2);
-  --         nodesAll(randomNumber2).nextNodes.Append(randomNumber);
-  --         exit;
-  --       end if;
-  --     end if;
-  --   end loop;
-  --   -- Put_Line("nowy skrot: " & Integer'Image(randomNumber) & " do " & Integer'Image(randomNumber2));
-  -- end loop;
-  nodesAll(0).nextNodes.Append(4);
-  nodesAll(4).nextNodes.Append(0);
+  reset(gen);
+  for I in 0 .. No_of_shortcuts-1 loop
+    randomNumber := random(gen);
+    loop
+      randomNumber2 := random(gen);
+      --swapPos
+      if randomNumber2/=randomNumber and randomNumber2/=No_of_nodes then
+        -- Check if route already exists
+        bulik := 0;
+        for E of nodesAll(randomNumber).nextNodes loop
+          if E = randomNumber2 then
+            bulik := 1;
+          end if;
+        end loop;
+        if bulik = 0 then
+          nodesAll(randomNumber).nextNodes.Append(randomNumber2);
+          nodesAll(randomNumber2).nextNodes.Append(randomNumber);
+          exit;
+        end if;
+      end if;
+    end loop;
+    -- Put_Line("nowy skrot: " & Integer'Image(randomNumber) & " do " & Integer'Image(randomNumber2));
+  end loop;
+  -- nodesAll(0).nextNodes.Append(4);
+  -- nodesAll(4).nextNodes.Append(0);
   --show routes
   for I in 0 .. No_of_nodes-1 loop
     Put("Node no. " & Integer'Image(I) & " routes ::::::: ");
@@ -355,7 +384,7 @@ begin
     sArray(I).start; --start
   end loop;
 
-  delay 2000.0;
+  counter.getEnd(a);
   Put_Line("Konczenie dzialania symulacji");
   --Eksterminacja
   for I in 0 .. No_of_nodes-1 loop
@@ -363,6 +392,6 @@ begin
     rArray(I).exterminate;
     sArray(I).exterminate;
   end loop;
-
+  counter.exterminate;
   Printer.exterminate;
 end main;
