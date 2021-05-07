@@ -310,7 +310,7 @@ begin
     Printer.exterminate;
 		return;
 	end if;
-	if(No_of_shortcuts*2 > No_of_nodes) then
+	if(No_of_shortcuts > (No_of_nodes-1)*(No_of_nodes/2)) then
 		Put_Line("too much shortcuts");
     Printer.exterminate;
 		return;

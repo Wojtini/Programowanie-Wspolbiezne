@@ -272,7 +272,7 @@ func main() {
 		fmt.Println("problem occured")
 	}
 
-  max_shortcuts = (n-3)*n/3;
+  max_shortcuts = (n-1)*n/2;
   if(d > max_shortcuts){
     fmt.Println("Za duzo skrotow")
     return;

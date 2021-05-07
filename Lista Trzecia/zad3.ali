@@ -16,8 +16,9 @@ RV NO_FIXED_POINT
 RV NO_IO
 RV NO_IMPLICIT_CONDITIONALS
 RV NO_LOCAL_ALLOCATORS
+RV NO_LOCAL_PROTECTED_OBJECTS
 RV NO_NESTED_FINALIZATION
-RV NO_RELATIVE_DELAY
+RV NO_PROTECTED_TYPES
 RV NO_SECONDARY_STACK
 RV NO_SELECT_STATEMENTS
 RV NO_STANDARD_ALLOCATORS_AFTER_ELABORATION
@@ -37,10 +38,10 @@ RV SPARK_05
 RV MAX_SELECT_ALTERNATIVES=2
 RV MAX_TASK_ENTRIES=2
 RV MAX_TASKS=1+
+RV MAX_ENTRY_QUEUE_LENGTH=1+
 
-U main%b		zad2.adb		413d24a2 NE OO SU IL
+U main%b		zad3.adb		c6975d6a NE OO SU IL
 W ada%s			ada.ads			ada.ali
-Z ada.calendar.delays%s	a-caldel.adb		a-caldel.ali
 W ada.command_line%s	a-comlin.adb		a-comlin.ali
 W ada.containers%s	a-contai.ads		a-contai.ali
 Z ada.containers.generic_array_sort%s
@@ -62,7 +63,7 @@ Z system%s		system.ads		system.ali
 Z system.address_image%s  s-addima.adb		s-addima.ali
 Z system.concat_2%s	s-conca2.adb		s-conca2.ali
 Z system.concat_3%s	s-conca3.adb		s-conca3.ali
-Z system.concat_4%s	s-conca4.adb		s-conca4.ali
+Z system.concat_7%s	s-conca7.adb		s-conca7.ali
 Z system.finalization_masters%s  s-finmas.adb	s-finmas.ali
 Z system.img_int%s	s-imgint.adb		s-imgint.ali
 Z system.parameters%s	s-parame.adb		s-parame.ali
@@ -77,13 +78,12 @@ Z system.storage_pools.subpools%s  s-stposu.adb	s-stposu.ali
 Z system.stream_attributes%s  s-stratt.adb	s-stratt.ali
 Z system.task_info%s	s-tasinf.adb		s-tasinf.ali
 Z system.tasking%s	s-taskin.adb		s-taskin.ali
+Z system.tasking.protected_objects%s  s-taprob.adb  s-taprob.ali
 Z system.tasking.rendezvous%s  s-tasren.adb	s-tasren.ali
 Z system.tasking.stages%s  s-tassta.adb		s-tassta.ali
 Z system.val_int%s	s-valint.adb		s-valint.ali
 
 D ada.ads		20170911084842 76789da1 ada%s
-D a-calend.ads		20190108095404 b288ede8 ada.calendar%s
-D a-caldel.ads		20190108095404 9f20b83d ada.calendar.delays%s
 D a-comlin.ads		20190108095404 4aa66568 ada.command_line%s
 D a-contai.ads		20170908151218 61e5e089 ada.containers%s
 D a-cgarso.ads		20170908151218 9129bfa8 ada.containers.generic_array_sort%s
@@ -111,7 +111,7 @@ D interfac.ads		20190108095404 5ab55268 interfaces%s
 D i-c.ads		20170908151218 5421119b interfaces.c%s
 D i-cstrin.ads		20190108095404 341d0ddf interfaces.c.strings%s
 D i-cstrea.ads		20190108095404 e53d8b8e interfaces.c_streams%s
-D zad2.adb		20210507144954 8b4aae1a main%b
+D zad3.adb		20210507145106 0ce0d7d2 main%b
 D system.ads		20190108095404 32a08138 system%s
 D s-addima.ads		20190108095404 a1ec9d3a system.address_image%s
 D s-atacco.ads		20190108095404 4c36d12f system.address_to_access_conversions%s
@@ -119,7 +119,7 @@ D s-atocou.ads		20190108095404 b45c2d8d system.atomic_counters%s
 D s-atocou.adb		20190108095404 b65612c0 system.atomic_counters%b
 D s-conca2.ads		20190108095404 02a0d7d0 system.concat_2%s
 D s-conca3.ads		20190108095404 0b705ca5 system.concat_3%s
-D s-conca4.ads		20190108095404 7e642b20 system.concat_4%s
+D s-conca7.ads		20190108095404 fcc75b1f system.concat_7%s
 D s-crtl.ads		20190108095404 0ebbdb71 system.crtl%s
 D s-exctab.ads		20190108095404 54135002 system.exception_table%s
 D s-ficobl.ads		20190108095404 078245e4 system.file_control_block%s
@@ -161,154 +161,165 @@ D s-valuns.ads		20190108095404 10a8ed3b system.val_uns%s
 D s-wchcon.ads		20190108095404 1b7d22d2 system.wch_con%s
 D s-win32.ads		20190108095404 b7f96285 system.win32%s
 X 1 ada.ads
-16K9*Ada 20e8 31|1r6 1r23 2r6 2r31 3r6 4r6 5r6 6r6 6r26 7r6 10r44 11r48 12r52
-. 13r46 14r45 22r36 27r29
-X 4 a-comlin.ads
-36K13*Command_Line 144e21 31|3w10 10r48 11r52 12r56 13r50 14r49
-52V13*Argument{string} 31|10s61 11s65 12s69 13s63 14s62
-X 5 a-contai.ads
-16K13*Containers 24e19 31|6w10 6r30 7r10 22r40
-20I9*Count_Type<integer>
-X 9 a-convec.ads
-61I9 Index_Type 31|22r59
-62+9 Element_Type 31|22r84
-73k24*Vectors 824e27 31|7w21 22r51
-88R9 Vector<12|43R9> 31|99r28[22] 106r19[22] 107r30[22]
-165V13 Length{5|20I9} 31|191s59[22]
-431U14 Append 31|148s36[22] 149s39[22] 273s29[22] 302s44[22] 332s44[22]
-X 13 a-inteio.ads
-18K13*Integer_Text_IO[24|46] 31|2w10 2r35
-X 15 a-iteint.ads
+16K9*Ada 20e8 29|1r6 1r23 2r6 2r31 3r6 4r6 5r6 6r6 6r26 7r6 10r44 11r48 19r36
+. 24r29
+X 2 a-comlin.ads
+36K13*Command_Line 144e21 29|3w10 10r48 11r52
+52V13*Argument{string} 29|10s61 11s65
+X 3 a-contai.ads
+16K13*Containers 24e19 29|6w10 6r30 7r10 19r40
+X 7 a-convec.ads
+61I9 Index_Type 29|19r59
+62+9 Element_Type 29|19r84
+73k24*Vectors 824e27 29|7w21 19r51
+88R9 Vector<10|43R9> 29|31r19[19] 32r30[19]
+431U14 Append 29|325s29[19] 337s29[19] 357s44[19] 358s45[19]
+X 11 a-inteio.ads
+18K13*Integer_Text_IO[22|46] 29|2w10 2r35
+X 13 a-iteint.ads
 24h9 Forward_Iterator
-32h9 Reversible_Iterator<24R9[9|111]>
-X 16 a-numeri.ads
-16K13*Numerics 32e17 31|5r10 27r33
-X 17 a-nudira.ads
-44k22*Discrete_Random 75e33 31|5w19 27r42
-50R9 Generator<52|63R9> 31|29r11[27]
-52V13 Random{integer} 31|189s27[27] 193s26[27] 227s21[27] 230s21[27] 283s21[27]
-. 285s24[27] 313s21[27] 315s24[27]
-55U14 Reset<52|100p14> 31|281s3[27]
-X 18 a-nudira.adb
-53V16 Random[52|83]{integer} 53|392b13[31|27]
-X 21 a-string.ads
-16K13*Strings 35e16 31|4w10
-X 23 a-textio.ads
-49K13*Text_IO 471e16 31|1w10 1r27
-166U14*New_Line 31|346s5 389s5 400s5
-242U14*Put 31|342s5 344s7 384s5 386s7 395s5 397s7
-263U14*Put_Line 31|40s15 239s17 246s17 253s17 260s17 382s3 393s3
-X 27 interfac.ads
+32h9 Reversible_Iterator<24R9[7|111]>
+X 14 a-numeri.ads
+16K13*Numerics 32e17 29|5r10 24r33
+X 15 a-nudira.ads
+44k22*Discrete_Random 75e33 29|5w19 24r42
+50R9 Generator<50|63R9> 29|26r11[24]
+52V13 Random{integer} 29|210s18[24] 344s21[24] 346s24[24]
+55U14 Reset<50|100p14> 29|342s3[24]
+X 16 a-nudira.adb
+53V16 Random[50|83]{integer} 51|392b13[29|24]
+X 19 a-string.ads
+16K13*Strings 35e16 29|4w10
+X 21 a-textio.ads
+49K13*Text_IO 471e16 29|1w10 1r27
+166U14*New_Line 29|373s5
+242U14*Put 29|369s5 371s7
+263U14*Put_Line 29|46s15 229s13 309s17 314s17 388s3
+X 25 interfac.ads
 74M9*Unsigned_32
 77M9*Unsigned_64
-X 31 zad2.adb
-9U11*main 9b11 402l5 402t9
-10i5 No_of_nodes{integer} 26r46 122r33 126r29 139r23 178r24 231r31 238r6
-. 245r31 245r47 252r14 252r30 268r17 272r13 293r57 313r38 315r41 341r17 371r17
-. 383r17
-11i5 No_of_shortcuts{integer} 245r12 282r17
-12i5 No_of_antishortcuts{integer} 252r47 312r17
-13i5 No_of_packets{integer} 125r33 259r12 349r28 353r17 394r17
-14i5 Value_of_ttl{integer} 357r28
-16i5 a{integer} 365m24
-17i5 randomNumber{integer} 283m5 287r26 288r42 289m9 289r42 290r42 293r25
-. 296r27 302r20 313m5 317r26 318r42 319m9 319r42 320r42 323r25 326r27 332r20
-18i5 randomNumber2{integer} 285m7 287r10 288m9 288r26 289r26 290m9 290r26
-. 293r10 293r42 297r18 302r51 315m7 317r10 318m9 318r26 319r26 320m9 320r26
-. 323r10 327r18 332r51
-19i5 bulik{integer} 295m9 298m13 301r12 325m9 328m13 331r12
-21A10 integerArray(natural)<integer>
-22K13 Integer_Vectors[9|73] 23r9
-26I13 Rand_Range{integer} 27r58
-27K13 Rand_Int[17|44] 28r9
-29r5 gen{17|50R9[27]} 189r34 193r33 227r28 230r28 281r9 283r28 285r31 313r28
-. 315r31
-31t10 Printer 35b15 49l9 49t16 167r15 174r15 179r17 185r19 188r19 198r21
-. 240r5 247r5 254r5 261r5 364r3 366r3 377r3
-32Y13 print 32>19 39b20 41l17 41t22 167s23 174s23 179s25 185s27 188s27 198s29
-. 364s11 366s11
-32a19 text{string} 40r24
-33Y13 exterminate 43b20 45l17 45t28 240s13 247s13 254s13 261s13 377s11
-39a26 text{string}
-51t10 PacketCounter 57b15 95l9 95t22 175r15 180r17 186r19 199r21 241r5 248r5
-. 255r5 262r5 349r3 360r7 365r3 379r3
-52Y13 lastNodeId 52>25 62b14 64l11 64t21 349s17
-52i25 id{integer} 63r21
-53Y13 getEnd 53<21 90b18 92l15 92t21 365s17
-53i21 temp{integer} 91m13 91r13
-54Y13 packetInput 54>25 70b18 80l15 80t26 175s29 180s31 186s33 199s35 360s21
-54i25 pid{integer} 71r16 73r18
-55Y13 exterminate 82b18 84l15 84t26 241s19 248s19 255s19 262s19 379s17
-58i5 packetCounts{integer} 66m7 72m15 72r31 77m15 77r31 88r22
-59i5 lastNode{integer} 63m9 73r24
-60b5 doEnd{boolean} 67m7 74m17 88r12
-62i25 id{integer}
-70i30 pid{integer}
-90i25 temp{integer}
-97R10 Packet 101e15 102r30 355r28
-98i7 id{integer} 149r48 174r60 179r61 185r64 188r64 198r66 356m21
-99r7 visitedNodesVector{9|88R9[22]} 148m17 396r28
-100i7 ttl{integer} 183m21 183r32 184r24 357m21
-102P10 PacketPtr(97R10) 111r52 117r30 130r11 146r35
-104R10 NodeInfo 108e15 109r32 270r24
-105i7 id{integer} 148r46 167r86 174r123 178r21 185r113 188r112 198r119 271m17
-106r7 nextNodes{9|88R9[22]} 191r49 195m27 273m19 296r41 302m34 326r41 332m34
-. 343r26
-107r7 handledPacketsVector{9|88R9[22]} 149m18 385r26
-109P10 NodeInfoPtr(104R10) 112r50 116r28 129r10 136r29
-111A10 packetArray(102P10)<integer> 125r18
-112A10 nodeArray(109P10)<integer> 126r16
-114T15 Tasker 120l9 120e15 122r51 128b15 206l9 206t15
-116Y15 nodeInput 116>25 136b16 138l13 138t22 276s11
-116p25 n{109P10} 137r17
-117Y15 packetInput 117>27 146b20 158l17 158t28 195s44 361s13
-117p27 p{102P10} 148r15 149r46 150r22
-118Y15 exterminate 160b20 163l17 163t28 373s11
-119Y15 setupTrap 166b20 169l17 169t26 232s22
-122A10 taskArray(114T15)<integer> 123r10
-123a5 a1{122A10} 195r21 232r13 276r5 361r7 373r5
-125a5 packetsAll{111A10} 355m7 356r7 357r7 361r25 396r14
-126a5 nodesAll{112A10} 270m5 271r5 273r7 276r21 296r18 302r11 326r18 332r11
-. 343r14 385r14
-129p5 ni{109P10} 137m11 148r43 149r15 167r83 174r120 178r18 185r110 188r109
-. 191r46 195r24 198r116
-130p5 pom{102P10} 150m15 174r56 179r57 183r17 183r28 184r20 185r60 188r60
-. 195r56 198r62
-131i5 rand{integer} 189m19 191m19 191r28 195r37
-132b5 packetReceived{boolean} 143m11 151m15 172r14
-133b5 trap{boolean} 135m9 168m15 173r16 176m15
-136p26 n{109P10}
-139i13 I{integer}
-146p32 p{102P10}
-208t10 Killer 212b15 235l9 235t15 242r5 249r5 256r5 263r5 351r3 370r3
-209Y13 exterminate 220b18 222l15 222t26 242s12 249s12 256s12 263s12 370s10
-210Y13 start 215b14 217l11 217t16 351s10
-213i5 rand{integer} 227m13 228r19 230m13 231m13 231r21 232r16
-268i7 I{integer} 270r14 271r14 271r23 272r8 273r16 273r36 276r8 276r30
-282i7 I{integer}
-296i13 E{integer} 297r14
-312i7 I{integer}
-326i13 E{integer} 327r14
-341i7 I{integer} 342r37 343r23
-343i9 E{integer} 344r25
-353i7 I{integer} 355r18 356r18 356r27 357r18 360r33 361r36
-371i7 I{integer} 373r8
-383i7 I{integer} 384r37 385r23
-385i9 E{integer} 386r25
-394i7 I{integer} 395r39 396r25
-396i9 E{integer} 397r25
-X 32 system.ads
+X 29 zad3.adb
+9U11*main 9b11 397l5 397t9
+10i5 No_of_nodes{integer} 23r46 94r33 137r24 169r36 179r37 213r23 300r29
+. 302r35 308r6 313r31 313r47 320r17 324r13 335r17 348r57 368r17 378r17 383r17
+. 390r17
+11i5 No_of_shortcuts{integer} 313r12 343r17
+13i5 randomNumber{integer} 344m5 348r25 351r27 357r20 358r52
+14i5 randomNumber2{integer} 346m7 348r10 348r42 352r18 357r51 358r20
+15i5 bulik{integer} 350m9 353m13 356r12
+16i5 a{integer} 387m18
+18A10 integerArray(natural)<integer>
+19K13 Integer_Vectors[7|73] 20r9
+23I13 Rand_Range{integer} 24r58
+24K13 Rand_Int[15|44] 25r9
+26r5 gen{15|50R9[24]} 210r25 342r9 344r28 346r31
+29R10 NodeInfo 33e15 34r32 322r24
+30i7 id{integer} 139r17 140r31 141r34 143r35 144r34 146r17 211r35 215r19
+. 219r36 221r30 229r39 268r42 279r36 284r46 323m17
+31r7 nextNodes{7|88R9[19]} 155r21 230r25 325m19 337m19 351r41 357m34 358m35
+. 370r26
+32r7 handledPacketsVector{7|88R9[19]}
+34P10 NodeInfoPtr(29R10) 108r32 135r32 174r26 184r26 190r10 195r27 245r10
+. 250r27 299r50
+37t10 Printer 41b15 55l9 55t16 268r11 284r15 310r5 315r5 396r3
+38Y13 print 38>19 45b20 47l17 47t22 268s19 284s23
+38a19 text{string} 46r24
+39Y13 exterminate 49b20 51l17 51t28 310s13 315s13 396s11
+45a26 text{string}
+58t10 counter 63b15 83l9 83t16 124r10 131r10 150r14 387r3 395r3
+59Y13 input 59>20 68b18 71l15 71t20 124s18 131s18 150s22
+59i20 val{integer} 69r22
+60Y13 getEnd 60<21 74b18 76l15 76t21 387s11
+60i21 temp{integer} 75m13 75r13
+61Y13 exterminate 77b18 79l15 79t26 395s11
+64i5 c{integer} 69m13 69r18
+68i25 val{integer}
+74i25 temp{integer}
+86R10 R_j 91e15 92r28 94r51 105r44 106r29 116r44 128r29 192r11 246r13 247r11
+87i7 j{integer} 130r20 132r20 138m19 279m50 284r102
+88i7 cost{integer} 140m21 143m21 157m19 273m19 273r33 283r22 283r34 284r194
+89i7 nexthop{integer} 141m21 144m21 158m19 274m19 284r139
+90b7 changed{boolean} 125m21 132m23 147m21 151m21 220r21 275m19
+92P10 R_j_Ptr(86R10)
+94A10 R_j_Array(86R10)<integer> 99r12 111r14
+96R10 Packet 100e15 101r30 175r28 191r18 248r18 264r33
+97i7 sender{integer} 211m22 268r94 274r42
+98i7 size{integer} 212m22 222r41 223m26 223r45 227r25 270r37
+99a7 arr{94A10} 222m26 272r34
+101P10 PacketPtr(96R10)
+103W20 RoutingTable 111E8 112l9 112e21 114b20 167l9 167t21 169r54
+105V17 Get{86R10} 105>21 116b17 120l12 120t15 219s40 279s40
+105i21 index{integer} 116b21 119r21
+106U18 Set 106>22 128b18 133l12 133t15
+106r22 value{86R10} 128b22 130r14 130r26 132r14
+107U18 ChangeFlag 107>29 107>45 122b18 126l12 126t22 221s34
+107i29 index{integer} 122b29 125r14
+107b45 change{boolean} 122b45 125r32
+108U18 InitValues 108>29 135b18 165l12 165t22 379s20
+108p29 n{34P10} 135b29 139r15 140r29 141r32 143r33 144r32 146r15 155r19
+111a8 arr{94A10} 119r17 125r10 130r10 132r10 138r12 140r14 141r14 143r14
+. 144r14 147r14 151r14 157r12 158r12
+137i14 I{integer} 138r16 138r24 139r22 140r18 140r36 141r18 143r18 143r29
+. 144r18 146r22 147r18 151r18
+155i14 E{integer} 157r16 158r16 158r30
+169A10 RoutingArray(103W20)<integer> 170r19
+170a5 routesArray{169A10} 219r21 221r15 279r21 379r5
+173T15 Receiver 177l9 177e17 179r55 244b15 297l9 297t17
+174Y13 nodeInput 174>23 250b14 252l11 252t20 329s15
+174p23 n{34P10} 251r15
+175Y13 packetInput 175>25 231s25 264b18 266l15 266t26
+175r25 p{96R10} 265r28
+176Y13 exterminate 259b18 261l15 261t26 392s15
+179A10 ReceiverArray(173T15)<integer> 180r14
+180a5 rArray{179A10} 231r15 329r5 392r5
+183T15 Sender 187l9 187e15 189b15 240l9 240t15 302r53
+184Y13 nodeInput 184>23 195b14 197l11 197t20 330s15
+184p23 n{34P10} 196r15
+185Y13 exterminate 205b18 207l15 207t26 393s15
+186Y13 start 199b14 201l11 201t16 384s15
+190p5 ni{34P10} 196m9 211r32 215r16 219r33 221r27 229r36 230r22
+191r5 new_Packet{96R10} 211m11 212m11 222m15 222r30 223m15 223r34 227r14
+. 231r37
+192r5 curr{86R10} 219m13 220r16 222r50
+193i5 counter{integer} 228m13 228r24
+195p24 n{34P10}
+213i15 I{integer} 219r44 221r45
+230i17 E{integer} 231r22
+245p5 ni{34P10} 251m9 268r39 279r33 284r43
+246r5 newly{86R10} 272m13 273m13 273r27 274m13 275m13 279r44 283r16 284r96
+. 284r133 284r188
+247r5 curr{86R10} 279m13 283r29
+248r5 temp_packet{96R10} 265m13 268r82 270r25 272r22 274r30
+250p24 n{34P10}
+264r30 p{96R10}
+270i15 I{integer} 272r38
+299A10 nodeArray(34P10)<integer> 300r16
+300a5 nodesAll{299A10} 322m5 323r5 325r7 329r25 330r25 337r5 351r18 357r11
+. 358r11 370r14 379r31
+302A10 SenderArray(183T15)<integer> 303r14
+303a5 sArray{302A10} 330r5 384r5 393r5
+320i7 I{integer} 322r14 323r14 323r23 324r8 325r16 325r36 329r12 329r34 330r12
+. 330r34
+335i7 I{integer} 337r14 337r36
+343i7 I{integer}
+351i13 E{integer} 352r14
+368i7 I{integer} 369r37 370r23
+370i9 E{integer} 371r25
+378i7 I{integer} 379r17 379r40
+383i7 I{integer} 384r12
+390i7 I{integer} 392r12 393r12
+X 30 system.ads
 67M9*Address
-X 47 s-memory.ads
-53V13*Alloc{32|67M9} 103i<c,__gnat_malloc>22
+X 45 s-memory.ads
+53V13*Alloc{30|67M9} 103i<c,__gnat_malloc>22
 68U14*Free 104i<c,__gnat_free>22
-76V13*Realloc{32|67M9} 105i<c,__gnat_realloc>22
-X 52 s-rannum.ads
-75V13*Random{27|74M9} 53|221i21
-76V13*Random{27|77M9} 53|221i21
-X 58 s-stausa.ads
+76V13*Realloc{30|67M9} 105i<c,__gnat_realloc>22
+X 50 s-rannum.ads
+75V13*Random{25|74M9} 51|221i21
+76V13*Random{25|77M9} 51|221i21
+X 56 s-stausa.ads
 203U14*Initialize 204i<c,__gnat_stack_usage_initialize>22
 268U14*Output_Results 272i<c,__gnat_stack_usage_output_results>22
-X 60 s-stalib.adb
+X 58 s-stalib.adb
 93U14 Break_Start 94i<c,__gnat_break_start>22
 

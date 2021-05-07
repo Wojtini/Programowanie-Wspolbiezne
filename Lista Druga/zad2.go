@@ -183,11 +183,11 @@ func main() {
 		fmt.Println("problem occured")
 		return
 	}
-	if(d*3 > n){
+	if(d > (n-3)*(n/2)){
 		fmt.Println("too much shortcuts")
 		return
 	}
-	if(b*3 > n){
+	if(b > (n-1)*(n/2)){
 		fmt.Println("too much (anti)shortcuts")
 		return
 	}
