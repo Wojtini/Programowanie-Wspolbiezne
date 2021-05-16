@@ -70,7 +70,7 @@ procedure main is
             -- Printer.print("PC:" & Integer'Image(c));
           end input;
         or
-          delay 10.0;
+          delay 25.0;
           accept getEnd(temp : out Integer) do
             temp := 0;
           end getEnd;
@@ -106,12 +106,20 @@ procedure main is
        procedure Set(value: R_j);
        procedure ChangeFlag(index: Integer; change: Boolean); --wyglada na groznie i tak jest
        procedure InitValues(n: NodeInfoPtr); --wyglada na groznie i tak jest
+       entry BetterGet (index: Integer; rj : out R_j);
 
     private
        arr : R_j_Array;
     end RoutingTable;
 
     protected body RoutingTable is
+
+       entry BetterGet (index: Integer; rj : out R_j)
+        when true is
+       begin
+          rj := arr(index);
+          arr(index).changed := false;
+       end BetterGet;
 
        function Get(index: Integer) return R_j is -- Get Record
        begin
@@ -127,6 +135,7 @@ procedure main is
 
        procedure Set(value: R_j) is
        begin
+         -- Put_Line("XASDASDASDSAKJDHAKJSD");
          arr(value.j) := value;
          counter.input(1);
          arr(value.j).changed := true;
@@ -157,17 +166,16 @@ procedure main is
            arr(E).cost := 1;
            arr(E).nexthop := E;
          end loop;
-         -- if n.id = 4 then
-         --     for I in 0 .. No_of_nodes-1 loop
-         --       Put_Line(Integer'Image(n.id) & " do " &  Integer'Image(arr(I).j) & ":" & Integer'Image(arr(I).cost) & Integer'Image(arr(I).nexthop) );
-         --     end loop;
-         -- end if;
        end InitValues;
 
     end RoutingTable;
 
     type RoutingArray is array (0..No_of_nodes-1) of RoutingTable;
     routesArray : RoutingArray;
+
+
+    -- type RoutingArrayThread is array (0..No_of_nodes-1) of RoutingTableThread;
+    -- routesArrayThread : RoutingArrayThread;
 
     --receiver p1
     task type Receiver is
@@ -216,9 +224,12 @@ procedure main is
               null;
               -- Printer.print(Integer'Image(ni.id) & " SENDER OPERUJE NA ROUTES ARRAY ");
             end if;
-            curr := routesArray(ni.id).Get(I);          --    nie ma prawa sie udac
+            -- curr := routesArray(ni.id).Get(I);          --    nie ma prawa sie udac
+            routesArray(ni.id).BetterGet(I,curr);
+            -- routesArrayThread(ni.id).Get(I);          --    thread
+            -- routesArrayThread(ni.id).GetOut(curr);
             if curr.changed then
-              routesArray(ni.id).ChangeFlag(I,false);   --    nie ma prawa sie udac
+              -- routesArray(ni.id).ChangeFlag(I,false);   --    nie ma prawa sie udac
               new_Packet.arr(new_Packet.size) := curr;
               new_Packet.size := new_Packet.size + 1;
             end if;
@@ -226,14 +237,14 @@ procedure main is
           --wyslij
           if new_Packet.size > 0 then
             counter := counter + 1;
-            Put_Line(Integer'Image(ni.id) & " wysyla paczke ");
+            -- Put_Line(Integer'Image(ni.id) & " wysyla paczke ");
             for E of ni.nextNodes loop
               rArray(E).packetInput(new_Packet);
               -- Put_Line(Integer'Image(ni.id) & "wyslalem");
             end loop;
           else
             null;
-            -- Put_Line(Integer'Image(ni.id) & "probowalem");
+            Put_Line(Integer'Image(ni.id) & " juz nic nie ma");
           end if;
         end select;
       end loop;
@@ -252,45 +263,27 @@ procedure main is
       end nodeInput;
 
       loop
-        -- if ni.id = 4 then
-        --   Printer.print(Integer'Image(ni.id) & " czeka na paczke ");
-        -- end if;
         select
           accept exterminate do
             null;
           end exterminate;
           exit;
         or
-          accept packetInput(p: Packet) do -- stworzyc dodatkowy pakiet i szybko wyjsc z accept'a
+          accept packetInput(p: Packet) do
             temp_packet := p;
           end packetInput;
-          -- if ni.id = 4 then
-          Printer.print(Integer'Image(ni.id) & " dostal paczke " & Integer'Image(temp_packet.sender));
-          -- end if;
           for I in 0 .. temp_packet.size-1 loop
             null;
             newly := temp_packet.arr(I);
             newly.cost := newly.cost + 1;
             newly.nexthop := temp_packet.sender;
             newly.changed := true;
-            -- if ni.id = 4 then
-              -- Printer.print(Integer'Image(ni.id) & " czy block ");
-            -- end if;
-            curr := routesArray(ni.id).Get(newly.j); -- czemu sie blokuje ja nawet nwm
-            -- if ni.id = 4 then
-            --   Printer.print(Integer'Image(ni.id) & " jednak nie block ");
-            -- end if;
+            curr := routesArray(ni.id).Get(newly.j);
             if newly.cost < curr.cost then
               Printer.print(Integer'Image(ni.id) & " zrobil zmiane drogi do: " & Integer'Image(newly.j) & " przez " & Integer'Image(newly.nexthop) & " koszt nowej drogi " & Integer'Image(newly.cost));
-              -- Printer.print(Integer'Image(ni.id) & " ha 1 ");
-              -- routesArray(ni.id).Set(newly);
-              -- Printer.print(Integer'Image(ni.id) & " ha 2 ");
+              routesArray(ni.id).Set(newly);
             end if;
-          --   Printer.print(Integer'Image(ni.id) & " wychodzi z loop'a ");
           end loop;
-          -- if ni.id = 4 then
-          --   Printer.print(Integer'Image(ni.id) & " skonczyl analize pakietu ");
-          -- end if;
         end select;
       end loop;
 
@@ -362,8 +355,8 @@ begin
     end loop;
     -- Put_Line("nowy skrot: " & Integer'Image(randomNumber) & " do " & Integer'Image(randomNumber2));
   end loop;
-  -- nodesAll(0).nextNodes.Append(4);
-  -- nodesAll(4).nextNodes.Append(0);
+  -- nodesAll(0).nextNodes.Append(5);
+  -- nodesAll(5).nextNodes.Append(0);
   --show routes
   for I in 0 .. No_of_nodes-1 loop
     Put("Node no. " & Integer'Image(I) & " routes ::::::: ");
@@ -377,6 +370,7 @@ begin
   --wyslij do routing table po stworzeniu skrotow
   for I in 0 .. No_of_nodes-1 loop
     routesArray(I).InitValues(nodesAll(I));
+    -- routesArrayThread(I).InitValues(nodesAll(I));
   end loop;
 
   --Start
